@@ -15,7 +15,8 @@ if (exist ('isintval', 'file') == 0)
 end
 
 if ispc()
-  mex_compile = @(f) eval (['mex -I"vendor" ', f, ' mpfr.lib']);
+  mex_compile = @(f) eval (['mex -I"..\..\vendor" ', f, ...
+      ' ..\..\vendor\mpfr.lib']);
 elseif isunix()
   mex_compile = @(f) eval (['mex ', f, ' -lmpfr']);
 else
