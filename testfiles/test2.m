@@ -1,0 +1,21 @@
+function test2(prec)
+eps=1/2;
+i=1;
+while((1-eps)~=1)
+	eps=eps/2;
+	i=i+1;
+end
+i-1
+2*eps
+prec
+eps=mpfr(1/2,prec);
+i=1;
+eins=mpfr(1,prec);
+zwei=mpfr(2,prec);
+while((eins-eps)~=eins)
+	eps=eps./zwei;
+	i=i+1;
+end
+i-1
+zwei*eps
+end
