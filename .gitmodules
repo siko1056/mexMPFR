@@ -1,6 +1,6 @@
 [submodule "mpfr"]
-	path = mpfr
+	path = vendor/mpfr
 	url = https://github.com/BrianGladman/mpfr.git
 [submodule "mpir"]
-	path = mpir
+	path = vendor/mpir
 	url = https://github.com/BrianGladman/mpir.git
