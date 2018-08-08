@@ -1,6 +1,12 @@
-/* mex-file for blocked calling of the MPFR-function
+/**
+ * Convert MPFR matrix to double matrix.
  *
- * double mpfr_get_d (mpfr t op, mpfr rnd t rnd)
+ * Usage:
+ *        c = mx_mpfr_to_double(a, rnd)
+ *
+ * Input:
+ *          'a'  MPFR operand
+ *        'rnd'  rounding mode (for 'c')
  *
  * written  10.06.2011     F. Buenger
  */
@@ -15,7 +21,6 @@
 
 void mexFunction( int nlhs, mxArray *plhs[],
                   int nrhs, const mxArray *prhs[] ) {
-
   mpfr_t op;
   mpfr_rnd_t rnd;
   mwIndex idx, numel;
@@ -24,21 +29,27 @@ void mexFunction( int nlhs, mxArray *plhs[],
   mx_mpfr_ptr pa[1];
   double *pd;
 
+  if (nrhs != 2) {
+    mexErrMsgIdAndTxt("MEXMPFR:mx_mpfr_to_double:rhs",
+                      "mx_mpfr_to_double: Function requires two inputs.");
+  }
+
   mex_prhs_get(pmxa[0], pa[0], prhs[0]);
   rnd = (mpfr_rnd_t)mxGetScalar(prhs[1]);
 
   mpfr_init(op);
-  /* get number of elements */
+
+  /* Get number of elements */
   numel = (mwIndex)mxGetNumberOfElements(pmxa[0][SIGN_NR]);
-  /*create output-array*/
+
+  /* Create output array */
   ndims = mxGetNumberOfDimensions(pmxa[0][SIGN_NR]);
   dims = (mwSize*)mxGetDimensions(pmxa[0][SIGN_NR]);
   plhs[0] = mxCreateNumericArray(ndims, dims, mxDOUBLE_CLASS, mxREAL);
   pd = mxGetPr(plhs[0]);
 
-  for(idx=0; idx<numel; ++idx) {
+  for (idx = 0; idx < numel; ++idx) {
     mx_to_mpfr(op, pa[0], idx);
-    pd[idx] = mpfr_get_d(op, rnd); /* x:= double(op)*/
+    pd[idx] = mpfr_get_d(op, rnd);
   }
-  return;
 }

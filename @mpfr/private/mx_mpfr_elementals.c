@@ -1,5 +1,5 @@
 /**
- * Elemental arithmetic operations on MPFR data.
+ * Elementwise arithmetic operations on MPFR data.
  *
  * Usage:
  *        c = mx_mpfr_elementals(a, b, rnd, op)
