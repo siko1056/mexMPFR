@@ -4,8 +4,10 @@ function startup (op)
 % written  07/11/2011     T. Xu
 % modified 14/06/2018     K.T. Ohlhus  overhaul the compiling process
 
+ROOT_DIR = pwd();
+
 if (exist ('isintval', 'file') ~= 2)
-  INTLAB_STARTUP = [pwd(), filesep(), 'vendor', filesep(), 'intlab', ...
+  INTLAB_STARTUP = [ROOT_DIR, filesep(), 'vendor', filesep(), 'intlab', ...
     filesep(), 'startintlab.m'];
   if (exist (INTLAB_STARTUP, 'file') == 2)
     run(INTLAB_STARTUP)
@@ -23,8 +25,8 @@ if (isunix () && (nargin > 0) && strcmpi (op, 'format'))
 end
 
 if ispc()
-  mex_compile = @(f) eval (['mex -I"..\..\vendor" ', f, ...
-    ' ..\..\vendor\mpfr.lib']);
+  mex_compile = @(f) eval (['mex -I"', ROOT_DIR, '\vendor" ', f, ...
+    ' ', ROOT_DIR, '\vendor\mpfr.lib']);
 elseif isunix()
   mex_compile = @(f) eval (['mex CFLAGS=''$CFLAGS -Wall -Wextra'' ', f, ...
     ' -lmpfr']);
@@ -73,6 +75,6 @@ mex_compile ('mx_mpfr_version_info.c');
 warning (warn_state);
 
 cd (old_dir);
-addpath(pwd(), [pwd(), filesep(), 'test']);
+addpath (ROOT_DIR, [ROOT_DIR, filesep(), 'test']);
 
 end
