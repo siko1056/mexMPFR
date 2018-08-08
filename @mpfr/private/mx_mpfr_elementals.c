@@ -1,3 +1,27 @@
+/**
+ * Elemental arithmetic operations on MPFR data.
+ *
+ * Usage:
+ *        c = mx_mpfr_elementals(a, b, rnd, op)
+ *
+ * Input:
+ *          'a'  MPFR operand (also for 'D_SUB' and 'D_DIV'!)
+ *          'b'  MPFR or double operand (depends on 'op')
+ *        'rnd'  rounding mode (for 'c')
+ *         'op'  Operation
+ *                 ADD
+ *                 SUB     mpfr - mpfr
+ *                 MUL     mpfr .* mpfr
+ *                 DIV     mpfr ./ mpfr
+ *                 ADD_D   mpfr + double && double + mpfr
+ *                 SUB_D   mpfr - double
+ *                 MUL_D   mpfr .* double && double .* mpfr
+ *                 DIV_D   mpfr ./ double
+ *                 D_SUB   double - mpfr
+ *                 D_DIV   double ./ mpfr
+ *
+ * written  19.05.2011     F. Buenger
+ */
 
 #include <stdio.h>
 #include <math.h>
@@ -11,7 +35,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
                   int nrhs, const mxArray *prhs[] ) {
   mpfr_t op1, op2, rop;
   int ternary;
-  int as_op;
+  int operation;
   mpfr_rnd_t rnd;
   mwIndex idx, numel_0, numel_1, numel_max, i_max, i_min;
   mwSize ndims, *dims;
@@ -19,23 +43,34 @@ void mexFunction( int nlhs, mxArray *plhs[],
   double *pop;
   mx_mpfr_arr pmxa[3];
   mx_mpfr_ptr pa[3];
-  int hasDouble = 0;
-  int subDouble = 0;
-  int (* fp) (mpfr_ptr rop, mpfr_srcptr op1, mpfr_srcptr op2,
-              mpfr_rnd_t rnd) = NULL;
-  int (* fpd)(mpfr_ptr rop, mpfr_srcptr op1, double pop,
-              mpfr_rnd_t rnd) = NULL;
-  int (*dfp) (mpfr_ptr rop, double pop,      mpfr_srcptr op1,
-              mpfr_rnd_t rnd) = NULL;
+  int op1_is_double = 0;
+  int (*fp )(mpfr_ptr rop,
+             mpfr_srcptr op1, mpfr_srcptr op2,
+             mpfr_rnd_t rnd) = NULL;
+  int (*fpd)(mpfr_ptr rop,
+             mpfr_srcptr op1, double pop,
+             mpfr_rnd_t rnd) = NULL;
+  int (*dfp)(mpfr_ptr rop,
+             double pop, mpfr_srcptr op1,
+             mpfr_rnd_t rnd) = NULL;
 
-  as_op = (int)mxGetScalar(prhs[3]);
+  if (nrhs != 4) {
+    mexErrMsgIdAndTxt("MEXMPFR:mx_mpfr_elementals:rhs",
+                      "mx_mpfr_elementals: Function requires four inputs.");
+  }
 
-  if (as_op >= ADD_D)
-    hasDouble = 1;
-  if (as_op >= D_SUB)
-    subDouble = 1;
+  /* Get first  input: MPFR variable */
+  mex_prhs_get(pmxa[0], pa[0], prhs[0]);
+  /* Get third  input: Rounding mode */
+  rnd = (mpfr_rnd_t)mxGetScalar(prhs[2]);
+  /* Get fourth input: Operation */
+  operation = (int)mxGetScalar(prhs[3]);
 
-  switch(as_op) {
+  if (operation >= D_SUB)
+    op1_is_double = 1;
+
+  /* Assign operation */
+  switch (operation) {
   case ADD:
     fp = mpfr_add;
     break;
@@ -66,93 +101,31 @@ void mexFunction( int nlhs, mxArray *plhs[],
   case D_DIV:
     dfp = mpfr_d_div;
     break;
+  default:
+    mexErrMsgIdAndTxt("MEXMPFR:mx_mpfr_elementals:unsupportedOperation",
+                      "mx_mpfr_elementals: Operation not supported.");
   }
 
-  mex_prhs_get(pmxa[0], pa[0], prhs[0]);
-
-  if (as_op >= ADD_D) {
-    pop = mxGetPr(prhs[1]); /* get pointer to double array */
-  } else {
+  switch (operation) {
+  case ADD:
+  case SUB:
+  case MUL:
+  case DIV:
+    /* Get second input: MPFR variable */
     mex_prhs_get(pmxa[1], pa[1], prhs[1]);
-  }
-  rnd = (mpfr_rnd_t)mxGetScalar(prhs[2]);
 
-  if (hasDouble) {
-
-    mpfr_init(op1);
-    mpfr_init(rop);
-
-    /* get number of elements */
-    numel_0 = (mwIndex)mxGetNumberOfElements(pmxa[0][SIGN_NR]);
-    numel_1 = (mwIndex)mxGetNumberOfElements(prhs[1]);
-
-    if(numel_0 > numel_1) { /* => mumel_1 = 1: */
-      ndims = mxGetNumberOfDimensions(pmxa[0][SIGN_NR]);
-      dims = (mwSize*)mxGetDimensions(pmxa[0][SIGN_NR]);
-      mex_mpfr_init(pmxa[1], pa[1], ndims, dims);
-
-      for(idx=0; idx<numel_0; ++idx) {
-        mx_to_mpfr(op1, pa[0], idx);
-        /* prec(rop):=max(prec(op1),prec(op2))*/
-        mpfr_set_prec(rop, max(mpfr_get_prec(op1), DOUBLE_PREC));
-        if (subDouble)
-          ternary = (*dfp)(rop, pop[0], op1, rnd);
-        else
-          ternary = (*fpd)(rop, op1, pop[0], rnd); /* rop:=op1+op2 */
-        /*if(ternary!=0) mexPrintf("\n mpfr_add return value = %d \n", ternary);*/
-        mpfr_to_mx(pmxa[1], pa[1], idx, rop);
-      }
-
-    } else { /* numel_0 <= numel_1 */
-      ndims = mxGetNumberOfDimensions(prhs[1]);
-      dims = (mwSize*)mxGetDimensions(prhs[1]);
-      mex_mpfr_init(pmxa[1], pa[1], ndims,
-                    dims); /* init pointer array for mpfr output array*/
-      if(numel_0 < numel_1) { /* => mumel_0 = 1: */
-        mx_to_mpfr(op1, pa[0], 0); /* get first input parameter */
-        prec = mpfr_get_prec(op1);
-        for(idx=0; idx<numel_1; ++idx) {
-          /* prec(rop):=max(prec(op1),prec(op2))*/
-          mpfr_set_prec(rop, max(prec, DOUBLE_PREC));
-          if (subDouble)
-            ternary = (*dfp)(rop, pop[idx], op1, rnd);
-          else
-            ternary = (*fpd)(rop, op1, pop[idx], rnd); /* rop:=op1+op2 */
-          /*if(ternary!=0) mexPrintf("\n mpfr_add return value = %d \n", ternary);*/
-          mpfr_to_mx(pmxa[1], pa[1], idx, rop);
-        }
-      } else { /* mumel_0 = numel_1 */
-        for(idx=0; idx<numel_1; ++idx) {
-          mx_to_mpfr(op1, pa[0], idx); /* get first input parameter */
-          /* prec(rop):=max(prec(op1),prec(op2))*/
-          mpfr_set_prec(rop, max(mpfr_get_prec(op1), DOUBLE_PREC));
-          if (subDouble)
-            ternary = (*dfp)(rop, pop[idx], op1, rnd);
-          else
-            ternary = (*fpd)(rop, op1, pop[idx], rnd); /* rop:=op1+op2 */
-          /*if(ternary!=0) mexPrintf("\n mpfr_add return value = %d \n", ternary);*/
-          mpfr_to_mx(pmxa[1], pa[1], idx, rop);
-        }
-      }
-    }
-    plhs[0] = mxCreateStructMatrix(1, 1, NFIELDS, field_names);
-    mex_plhs_set(plhs[0], pmxa[1], pa[1]);
-    mpfr_clear(op1);
-    mpfr_clear(rop);
-
-  } else {
-
-    /* mpfr_inits(op1, op2, rop); */ /* <-- produces Segmentation violation */
+    /* TODO: mpfr_inits(op1, op2, rop); segfault? */
     mpfr_init(op1);
     mpfr_init(op2);
     mpfr_init(rop);
-    /* get number of elements */
+
+    /* Get number of elements */
     numel_0 = (mwIndex)mxGetNumberOfElements(pmxa[0][SIGN_NR]);
     numel_1 = (mwIndex)mxGetNumberOfElements(pmxa[1][SIGN_NR]);
     numel_max = max(numel_0, numel_1);
 
-    /*create output-array*/
-    if(numel_0 >= numel_1) {
+    /* Get the index of the MPFR variable with the most elements 'i_max' */
+    if (numel_0 >= numel_1) {
       i_max = 0;
       i_min = 1;
     } else {
@@ -160,43 +133,131 @@ void mexFunction( int nlhs, mxArray *plhs[],
       i_min = 0;
     }
 
+    /* Create output array */
     ndims = mxGetNumberOfDimensions(pmxa[i_max][SIGN_NR]);
     dims = (mwSize*)mxGetDimensions(pmxa[i_max][SIGN_NR]);
     mex_mpfr_init(pmxa[2], pa[2], ndims, dims);
 
-    if(numel_0 == numel_1) {
-      for(idx=0; idx<numel_max; ++idx) {
+    if (numel_0 == numel_1) {
+      /* MPFR vector - vector operation of same length */
+      for (idx = 0; idx < numel_max; ++idx) {
         mx_to_mpfr(op1, pa[0], idx);
         mx_to_mpfr(op2, pa[1], idx);
         mpfr_set_prec(rop, max(mpfr_get_prec(op1), mpfr_get_prec(op2)));
-        ternary = (*fp)(rop, op1, op2, rnd); /* rop:=op1+op2 */
-        /*if(ternary!=0) mexPrintf("\n mpfr_add return value = %d \n", ternary);*/
+        ternary = (*fp)(rop, op1, op2, rnd);
+        if (ternary != 0) {
+          mexPrintf("\n mx_mpfr_elementals: MPFR returned = %d\n", ternary);
+        }
         mpfr_to_mx(pmxa[2], pa[2], idx, rop);
-
       }
-    } else {
-      /* The input parameter corresponding to the index i_min is a single number and
-       * the input parameter corresponding to the index i_max is an array with more than one value. */
-      mx_to_mpfr(op2, pa[i_min], 0);
+    } else if ((numel_0 == 1) || (numel_1 == 1)) {
+      /* MPFR vector - scalar operation */
+      mx_to_mpfr(op2, pa[i_min], 0); /* op2: scalar operand */
       prec = mpfr_get_prec(op2);
-      for(idx=0; idx<numel_max; ++idx) {
+      for (idx = 0; idx < numel_max; ++idx) {
         mx_to_mpfr(op1, pa[i_max], idx);
-        /* prec(rop):=max(prec(op1),prec(op2))*/
         mpfr_set_prec(rop, max(mpfr_get_prec(op1), prec));
         ternary = (*fp)(rop, op1, op2, rnd); /* rop:=op1+op2 */
-
+        if (ternary != 0) {
+          mexPrintf("\n mx_mpfr_elementals: MPFR returned = %d\n", ternary);
+        }
         mpfr_to_mx(pmxa[2], pa[2], idx, rop);
       }
+    } else {
     }
 
     plhs[0] = mxCreateStructMatrix(1, 1, NFIELDS, field_names);
     mex_plhs_set(plhs[0], pmxa[2], pa[2]);
 
-    /* mpfr_clears(op1, op2, rop);*/
+    /* TODO: mpfr_clears(op1, op2, rop);*/
     mpfr_clear(op1);
     mpfr_clear(op2);
     mpfr_clear(rop);
-  }
+    break;
 
-  return;
+  case ADD_D:
+  case SUB_D:
+  case MUL_D:
+  case DIV_D:
+  case D_SUB:
+  case D_DIV:
+
+    /* Get second input: double array */
+    pop = mxGetPr(prhs[1]);
+
+    mpfr_init(op1);
+    mpfr_init(rop);
+
+    /* Get number of elements */
+    numel_0 = (mwIndex)mxGetNumberOfElements(pmxa[0][SIGN_NR]);
+    numel_1 = (mwIndex)mxGetNumberOfElements(prhs[1]);
+
+    if (numel_1 == 1) {
+      /* Scalar double operand */
+      ndims = mxGetNumberOfDimensions(pmxa[0][SIGN_NR]);
+      dims = (mwSize*)mxGetDimensions(pmxa[0][SIGN_NR]);
+      mex_mpfr_init(pmxa[1], pa[1], ndims, dims);
+
+      for (idx = 0; idx < numel_0; ++idx) {
+        mx_to_mpfr(op1, pa[0], idx);
+        /* prec(rop):=max(prec(op1),prec(op2))*/
+        mpfr_set_prec(rop, max(mpfr_get_prec(op1), DOUBLE_PREC));
+        if (op1_is_double) {
+          ternary = (*dfp)(rop, pop[0], op1, rnd);
+        } else {
+          ternary = (*fpd)(rop, op1, pop[0], rnd);
+        }
+        if (ternary != 0) {
+          mexPrintf("\n mx_mpfr_elementals: MPFR returned = %d\n", ternary);
+        }
+        mpfr_to_mx(pmxa[1], pa[1], idx, rop);
+      }
+    } else if (numel_0 == 1) {
+      /* Scalar MPFR operand */
+      ndims = mxGetNumberOfDimensions(prhs[1]);
+      dims = (mwSize*)mxGetDimensions(prhs[1]);
+      mex_mpfr_init(pmxa[1], pa[1], ndims, dims);
+      mx_to_mpfr(op1, pa[0], 0); /* op1: scalar MPFR operand */
+      prec = mpfr_get_prec(op1);
+      for (idx = 0; idx < numel_1; ++idx) {
+        mpfr_set_prec(rop, max(prec, DOUBLE_PREC));
+        if (op1_is_double) {
+          ternary = (*dfp)(rop, pop[idx], op1, rnd);
+        } else {
+          ternary = (*fpd)(rop, op1, pop[idx], rnd);
+        }
+        if (ternary != 0) {
+          mexPrintf("\n mx_mpfr_elementals: MPFR returned = %d\n", ternary);
+        }
+        mpfr_to_mx(pmxa[1], pa[1], idx, rop);
+      }
+    } else if (numel_0 == numel_1) {
+      /* MPFR vector - double vector operation of same length */
+      for (idx = 0; idx < numel_1; ++idx) {
+        mx_to_mpfr(op1, pa[0], idx);
+        mpfr_set_prec(rop, max(mpfr_get_prec(op1), DOUBLE_PREC));
+        if (op1_is_double) {
+          ternary = (*dfp)(rop, pop[idx], op1, rnd);
+        } else {
+          ternary = (*fpd)(rop, op1, pop[idx], rnd);
+        }
+        if (ternary != 0) {
+          mexPrintf("\n mx_mpfr_elementals: MPFR returned = %d\n", ternary);
+        }
+        mpfr_to_mx(pmxa[1], pa[1], idx, rop);
+      }
+    } else {
+      mexErrMsgIdAndTxt("MEXMPFR:mx_mpfr_elementals:unsupportedOperation",
+                        "mx_mpfr_elementals: Operation not supported.");
+    }
+    plhs[0] = mxCreateStructMatrix(1, 1, NFIELDS, field_names);
+    mex_plhs_set(plhs[0], pmxa[1], pa[1]);
+    mpfr_clear(op1);
+    mpfr_clear(rop);
+    break;
+
+  default:
+    mexErrMsgIdAndTxt("MEXMPFR:mx_mpfr_elementals:unsupportedOperation",
+                      "mx_mpfr_elementals: Operation not supported.");
+  }
 }

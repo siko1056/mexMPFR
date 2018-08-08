@@ -1,6 +1,14 @@
-/* mex-file for blocked calling of the MPFR-function
+/**
+ * Create MPFR variable 'rop' initialized with string values given in 'cstr'.
  *
- *  int mpfr_set_str (mpfr_t rop, const char *s, int base, mpfr_rnd_t rnd)
+ * Usage:
+ *        rop = mx_mpfr_set_str (cstr, base, rnd, prec)
+ *
+ * Input:
+ *       'cstr'  cell array of strings
+ *       'base'  base of the string values
+ *        'rnd'  rounding mode (of 'rop')
+ *       'prec'  precision (of 'rop')
  *
  * written  19.05.2011     F. Buenger
  *
@@ -17,7 +25,7 @@
 void mexFunction( int nlhs, mxArray *plhs[],
                   int nrhs, const mxArray *prhs[] ) {
   mpfr_t rop;
-  int base,ternary;
+  int base, ternary;
   mpfr_rnd_t rnd;
   mpfr_prec_t prec;
   char *str = NULL;
@@ -28,46 +36,57 @@ void mexFunction( int nlhs, mxArray *plhs[],
   mx_mpfr_arr pmxa;
   mx_mpfr_ptr pa;
 
-  /* get input parameters base, rnd, prec */
-  base = (int)mxGetScalar(prhs[1]); /*prhs[0].2 contains the base*/
-  rnd = (mpfr_rnd_t)mxGetScalar(
-          prhs[2]); /* get second input parameter rounding mode */
-  prec = (mpfr_prec_t)mxGetScalar(
-           prhs[3]); /* get third input parameter precision */
+  if (nrhs != 4) {
+    mexErrMsgIdAndTxt("MEXMPFR:mx_mpfr_set_str:rhs",
+                      "mx_mpfr_set_str: This function requires four inputs.");
+  }
 
-  mpfr_init2(rop,prec); /* initialize rop with given precision */
+  /* Get second input: base */
+  base = (int)mxGetScalar(prhs[1]);
+  /* Get third  input: rounding mode */
+  rnd = (mpfr_rnd_t)mxGetScalar(prhs[2]);
+  /* Get fourth input: precision */
+  prec = (mpfr_prec_t)mxGetScalar(prhs[3]);
+
+  /* initialize rop with given precision */
+  mpfr_init2(rop, prec);
 
   /* create a CellArray for output that has the same size like the input-Array
      prhs[0] of doubles which shall be converted to multiple precision format mpfr_t */
   ndims = mxGetNumberOfDimensions(prhs[0]);
   dims = (mwSize*)mxGetDimensions(prhs[0]);
+  mex_mpfr_init(pmxa, pa, ndims, dims);
 
-
-  ndims = mxGetNumberOfDimensions(prhs[0]);
-  dims = (mwSize*)mxGetDimensions(prhs[0]);
-  mex_mpfr_init(pmxa,pa,ndims,dims);
-
-
-  /* convert all string entries prhs[0](i_1,i_2,....,i_ndims) to mpfr-format */
-  idx_max=(mwIndex)mxGetNumberOfElements(prhs[0])-1;
-  for(idx=0; idx<=idx_max; ++idx) {
+  /* Convert all string entries inside the cell array to MPFR-format */
+  idx_max = (mwIndex)mxGetNumberOfElements(prhs[0]) - 1;
+  for (idx = 0; idx <= idx_max; ++idx) {
     pidx = mxGetCell(prhs[0],idx);
-    strlen = mxGetN(pidx)*sizeof(mxChar)+1;
-    str = mxMalloc(strlen);
-    if(str==NULL) mexErrMsgTxt("mxMalloc error return value NULL");
-    ternary = mxGetString(pidx,str,strlen); /* Copy the string data into buf. */
-    if(ternary!=0) mexErrMsgTxt("mxGetString error return value");
-    /* convert string to mpfr-format */
-    ternary = mpfr_set_str(rop,str,base,
-                           rnd); /* convert numeric string to mpfr-format */
-
-    /*if(ternary!=0) mexPrintf("mpfr_set_str return value = %d",ternary);*/
-    mpfr_to_mx(pmxa,pa,idx,rop);
+    strlen = mxGetN(pidx) * sizeof(mxChar) + 1;
+    str = (char*) mxMalloc(strlen);
+    if (str == NULL) {
+      mexErrMsgIdAndTxt("MEXMPFR:mx_mpfr_set_str:mxMalloc",
+                        "mx_mpfr_set_str: cstr(%d) mxMalloc failed.",
+                        idx);
+    }
+    /* Copy the string data into buffer 'str'. */
+    ternary = mxGetString (pidx, str, strlen);
+    if (ternary != 0) {
+      mexErrMsgIdAndTxt("MEXMPFR:mx_mpfr_set_str:mxGetString",
+                        "mx_mpfr_set_str: cstr(%d) mxGetString failed.",
+                        idx);
+    }
+    /* Convert numeric string to MPFR-format */
+    ternary = mpfr_set_str(rop, str, base, rnd);
+    if (ternary != 0) {
+      mexErrMsgIdAndTxt("MEXMPFR:mx_mpfr_set_str:mpfr_set_str",
+                        "mx_mpfr_set_str: cstr(%d) mpfr_set_str failed.",
+                        idx);
+    }
+    mpfr_to_mx(pmxa, pa, idx, rop);
     mxFree(str);
     str = NULL;
   }
-  plhs[0] = mxCreateStructMatrix(1,1,NFIELDS,field_names);
-  mex_plhs_set(plhs[0],pmxa,pa);
+  plhs[0] = mxCreateStructMatrix(1, 1, NFIELDS, field_names);
+  mex_plhs_set(plhs[0], pmxa, pa);
   mpfr_clear(rop);
-  return;
 }
