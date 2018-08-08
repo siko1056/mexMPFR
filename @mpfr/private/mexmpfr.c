@@ -57,6 +57,11 @@ void mx_to_mpfr(mpfr_t x, mx_mpfr_ptr pa, int idx) {
   int i, i_max;
   /* set precision */
   mpfr_set_prec(x, (mpfr_prec_t)pa[PREC_NR][idx]);
+  /*
+   * Before we set bits, we first make a clean MPFR initialization with "1.0".
+   * Otherwise the hacks below will not work!
+   */
+  mpfr_set_d(x, 1.0, MPFR_RNDN);
   /* set sign, rounding mode MPFR_RNDN is irrelevant */
   mpfr_setsign(x, x, (mpfr_sign_t)pa[SIGN_NR][idx], MPFR_RNDN);
   /* set exponent */
