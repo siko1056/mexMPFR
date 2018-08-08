@@ -1,3 +1,7 @@
-function r = mpower(a,b)
-%MPOWER       Implements  a ^ b  for mpfr
-%OPEN
+function r = mpower(a, b)
+% MPOWER  Matrix power 'a ^ b'.
+%
+
+error ('MPFR:mpower:notImplemented', 'mpower: not implemented.');
+
+end

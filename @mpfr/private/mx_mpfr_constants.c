@@ -44,6 +44,10 @@ void mexFunction( int nlhs, mxArray *plhs[],
   case CONST_CATALAN_NR:
     fp = mpfr_const_catalan;
     break;
+  default:
+    mpfr_clear(rop);
+    mexErrMsgIdAndTxt("MEXMPFR:mx_mpfr_constants:unsupportedConstant",
+                      "mx_mpfr_constants: unsupported constant.");
   }
 
   ternary = (*fp)(rop, rnd);

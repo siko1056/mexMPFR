@@ -1,7 +1,5 @@
 function res = le(a,b)
-%LE           Implements  a <= b  elementwise for mpfr variables
-%
-%  if true,  a  is definitely less than or equal to  b
+% LE  Elementwise 'a <= b' for MPFR objects.
 %
 
 % written  07.11.2011     T.Xu
@@ -10,11 +8,13 @@ sizetest(a,b);
 LE_NR = 2;
 
 if ~isa(a,'mpfr')
-    a = mpfr(a);
+  a = mpfr(a);
 end
 if ~isa(b,'mpfr')
-    b = mpfr(b);
+  b = mpfr(b);
 end
 
-r = mx_mpfr_compare(a,b,LE_NR); 
+r = mx_mpfr_compare(a, b, LE_NR);
 res = abs(sign(r));
+
+end

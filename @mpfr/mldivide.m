@@ -1,3 +1,7 @@
 function c = mldivide(a,b)
-%MLDIVIDE     Implements  a \ b
-%OPEN
+% MLDIVIDE  Left division 'a \ b'.
+%
+
+error ('MPFR:mldivide:notImplemented', 'mldivide: not implemented.');
+
+end

@@ -1,7 +1,9 @@
-function c = ldivide(a,b)
-%LDIVIDE      elementwise left division a .\ b for mpfr
+function c = ldivide(a, b)
+% LDIVIDE  Elementwise left division 'a .\ b'.
+%
+
 % written  07.11.2011     T.Xu
 
-% entspricht b./a
+c = rdivide (b, a); % equals b./a
 
-c=rdivide(b,a);
+end
