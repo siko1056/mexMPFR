@@ -24,29 +24,29 @@ void mexFunction( int nlhs, mxArray *plhs[],
   /* function pointer to a comparsion function*/
   int (*fp)(mpfr_srcptr op1, mpfr_srcptr op2) = NULL;
   double *pres;
-  
-  
+
+
   mex_prhs_get(pmxa[0], pa[0], prhs[0]);
   mex_prhs_get(pmxa[1], pa[1], prhs[1]);
   cmp_op = (int)mxGetScalar(prhs[2]);
   switch (cmp_op) {
-    case LT_NR:
-      fp = mpfr_less_p;
-      break;
-    case GT_NR:
-      fp = mpfr_greater_p;
-      break;
-    case LE_NR:
-      fp = mpfr_lessequal_p;
-      break;
-    case GE_NR:
-      fp = mpfr_greaterequal_p;
-      break;
-    case EQ_NR:
-      fp = mpfr_equal_p;
-      break;
+  case LT_NR:
+    fp = mpfr_less_p;
+    break;
+  case GT_NR:
+    fp = mpfr_greater_p;
+    break;
+  case LE_NR:
+    fp = mpfr_lessequal_p;
+    break;
+  case GE_NR:
+    fp = mpfr_greaterequal_p;
+    break;
+  case EQ_NR:
+    fp = mpfr_equal_p;
+    break;
   }
-  
+
   /* mpfr_inits(op1, op2, rop); */ /* <-- produces Segmentation violation */
   mpfr_init(op1);
   mpfr_init(op2);
@@ -54,7 +54,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
   numel_0 = (mwIndex)mxGetNumberOfElements(pmxa[0][SIGN_NR]);
   numel_1 = (mwIndex)mxGetNumberOfElements(pmxa[1][SIGN_NR]);
   numel_max = max(numel_0, numel_1);
-  
+
   /*create output-array*/
   if (numel_0 >= numel_1) {
     i_max = 0;
@@ -67,25 +67,25 @@ void mexFunction( int nlhs, mxArray *plhs[],
   dims = (mwSize*)mxGetDimensions(pmxa[i_max][SIGN_NR]);
   plhs[0] = mxCreateNumericArray(ndims, dims, mxDOUBLE_CLASS, mxREAL);
   pres = mxGetPr(plhs[0]);
-  if(numel_0 == numel_1){
-    for(idx=0;idx<numel_max;++idx){
+  if (numel_0 == numel_1) {
+    for(idx=0; idx<numel_max; ++idx) {
       mx_to_mpfr(op1, pa[0], idx);
       mx_to_mpfr(op2, pa[1], idx);
       pres[idx] = (double)((*fp)(op1, op2)); /*  result = op1 cmp_op op2 */
     }
-  }else{
+  } else {
     /* The input parameter corresponding to the index i_min is a single number and
      * the input parameter corresponding to the index i_max is an array with more than one value. */
     mx_to_mpfr(op2, pa[i_min], 0);
-    for(idx=0;idx<numel_max;++idx){
+    for (idx=0; idx<numel_max; ++idx) {
       mx_to_mpfr(op1, pa[i_max], idx);
       pres[idx] = (*fp)(op1, op2); /*  result = op1 cmp_op op2 */
     }
   }
-  
+
   /* mpfr_clears(op1, op2, rop);*/
   mpfr_clear(op1);
   mpfr_clear(op2);
-  
+
   return;
 }

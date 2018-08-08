@@ -41,7 +41,7 @@
 #define DIV   3 /* mpfr ./ mpfr */
 #define ADD_D 4 /* mpfr + double && double + mpfr */
 #define SUB_D 5 /* mpfr - double */
-#define MUL_D 6	/* mpfr .* double && double .* mpfr */
+#define MUL_D 6 /* mpfr .* double && double .* mpfr */
 #define DIV_D 7 /* mpfr ./ double */
 #define D_SUB 8 /* double - mpfr */
 #define D_DIV 9 /* double ./ mpfr */
@@ -62,14 +62,20 @@ typedef mxArray* mx_mpfr_arr[NFIELDS];
 extern const char *field_names[];
 extern const char *disp_field_names[];
 
-void mx_to_mpfr(mpfr_t x, mx_mpfr_ptr pa, int idx);  /* convert mxArray f to mpfr_t-Format */
-void mpfr_to_mx(mx_mpfr_arr pmxa, mx_mpfr_ptr pa, int idx, mpfr_t x); /* convert mpfr_t Variable to mxArray-Format */
+void mx_to_mpfr(mpfr_t x, mx_mpfr_ptr pa,
+                int idx);  /* convert mxArray f to mpfr_t-Format */
+void mpfr_to_mx(mx_mpfr_arr pmxa, mx_mpfr_ptr pa, int idx,
+                mpfr_t x); /* convert mpfr_t Variable to mxArray-Format */
 
-void mex_mpfr_init(mx_mpfr_arr pmxa, mx_mpfr_ptr pa, mwSize ndim, const mwSize *dims); /* init mx_mpfr return structure*/
-void mex_plhs_set(mxArray* pl, mx_mpfr_arr pmxa, mx_mpfr_ptr pa); /* init mx_mpfr output structure*/
-void mex_prhs_get(mx_mpfr_arr pmxa, mx_mpfr_ptr pa, const mxArray* pr); /* init mx_mpfr input structure*/
+void mex_mpfr_init(mx_mpfr_arr pmxa, mx_mpfr_ptr pa, mwSize ndim,
+                   const mwSize *dims); /* init mx_mpfr return structure*/
+void mex_plhs_set(mxArray* pl, mx_mpfr_arr pmxa,
+                  mx_mpfr_ptr pa); /* init mx_mpfr output structure*/
+void mex_prhs_get(mx_mpfr_arr pmxa, mx_mpfr_ptr pa,
+                  const mxArray* pr); /* init mx_mpfr input structure*/
 
-int d_end_pred(mx_mpfr_ptr pa, int idx); /* if idx>0, compute the end index of the preceeding limb array, else return -1 */
+int d_end_pred(mx_mpfr_ptr pa,
+               int idx); /* if idx>0, compute the end index of the preceeding limb array, else return -1 */
 
 
 
