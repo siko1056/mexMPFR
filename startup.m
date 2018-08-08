@@ -71,6 +71,7 @@ old_dir = cd ('test');
 
 % version info
 mex_compile ('mx_mpfr_version_info.c');
+mex_compile ('mx_mpfr_sample.c');
 
 warning (warn_state);
 
