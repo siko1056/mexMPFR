@@ -24,7 +24,7 @@ end
 
 if ispc()
   mex_compile = @(f) eval (['mex -I"..\..\vendor" ', f, ...
-      ' ..\..\vendor\mpfr.lib']);
+    ' ..\..\vendor\mpfr.lib']);
 elseif isunix()
   mex_compile = @(f) eval (['mex CFLAGS=''$CFLAGS -Wall -Wextra'' ', f, ...
     ' -lmpfr']);
@@ -64,9 +64,15 @@ mex_compile ('mx_mpfr_compare.c mexmpfr.c');
 % conversion
 mex_compile ('mx_mpfr_to_double.c mexmpfr.c');
 
+cd (old_dir);
+old_dir = cd ('test');
+
+% version info
+mex_compile ('mx_mpfr_version_info.c');
+
 warning (warn_state);
 
 cd (old_dir);
-addpath(pwd());
+addpath(pwd(), [pwd(), filesep(), 'test']);
 
 end

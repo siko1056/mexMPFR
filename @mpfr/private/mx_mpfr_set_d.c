@@ -41,6 +41,12 @@ void mexFunction( int nlhs, mxArray *plhs[],
   rnd = (mpfr_rnd_t)mxGetScalar(prhs[1]);
   /* Get third  input: precision */
   prec = (mpfr_prec_t)mxGetScalar(prhs[2]);
+  if ((prec < MPFR_PREC_MIN) || (prec > MPFR_PREC_MAX)) {
+    mexErrMsgIdAndTxt("MEXMPFR:mx_mpfr_set_d:rhs",
+                      "mx_mpfr_set_d: precision exceeds allowed interval "
+                       "[%u, %u].", MPFR_PREC_MIN, MPFR_PREC_MAX);
+  }
+  
   /* Initialize output rop with given precision */
   mpfr_init2(rop, prec);
 
