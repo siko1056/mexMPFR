@@ -1,32 +1,20 @@
-function startup (op)
-% STARTUP Compilation of all MEX-functions of the Matlab-MPFR interface.
+function mpfrinit ()
+% MPFRINIT Compilation of the MPFR MEX-interface.
+%
+%    This function requires INTLAB to be started.
+%
+% See also startintlab.
 
 % written  07/11/2011     T. Xu
 % modified 14/06/2018     K.T. Ohlhus  overhaul the compiling process
+% modified 06/09/2018     K.T. Ohlhus  specialize for INTLAB
 
-ROOT_DIR = pwd();
-
-if (exist ('isintval', 'file') ~= 2)
-  INTLAB_STARTUP = [ROOT_DIR, filesep(), 'vendor', filesep(), 'intlab', ...
-    filesep(), 'startintlab.m'];
-  if (exist (INTLAB_STARTUP, 'file') == 2)
-    run(INTLAB_STARTUP)
-  else
-    error('MEXMPFR:startup:startintlab', ...
-      'Unable to find and start INTLAB.');
-  end
-end
-
-% Optionally format source code using "astyle" with Linux
-if (isunix () && (nargin > 0) && strcmpi (op, 'format'))
-  system (['find @mpfr/private/ -name "*.h" -or -name "*.c" ', ...
-    '| xargs astyle --style=google --indent=spaces=2 --max-code-length=80', ...
-    '--verbose --convert-tabs && rm -f *.orig *.mexa64']);
-end
+global INTLAB_CONST
+MPFR_PATH = [INTLAB_CONST.INTLABPATH, 'mpfr', filesep];
 
 if ispc()
-  mex_compile = @(f) eval (['mex -I"', ROOT_DIR, '\vendor" ', f, ...
-    ' ', ROOT_DIR, '\vendor\mpfr.lib']);
+  mex_compile = @(f) eval (['mex -I"', MPFR_PATH, 'vendor" ', f, ...
+    '  "', MPFR_PATH, 'vendor', filesep, 'mpfr.lib"']);
 elseif isunix()
   mex_compile = @(f) eval (['mex CFLAGS=''$CFLAGS -Wall -Wextra'' ', f, ...
     ' -lmpfr']);
@@ -76,6 +64,6 @@ mex_compile ('mx_mpfr_sample.c');
 warning (warn_state);
 
 cd (old_dir);
-addpath (ROOT_DIR, [ROOT_DIR, filesep(), 'test']);
+addpath (MPFR_PATH, [MPFR_PATH, filesep, 'test']);
 
 end
