@@ -1,4 +1,5 @@
-vendor/intlab
+vendor/mpfr
+vendor/mpir
 *.mex
 *.mexa64
 *.mexmaci64
