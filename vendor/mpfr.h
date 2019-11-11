@@ -1,6 +1,6 @@
 /* mpfr.h -- Include file for mpfr.
 
-Copyright 1999-2018 Free Software Foundation, Inc.
+Copyright 1999-2019 Free Software Foundation, Inc.
 Contributed by the AriC and Caramba projects, INRIA.
 
 This file is part of the GNU MPFR Library.
@@ -17,7 +17,7 @@ License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
 along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
-http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+https://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #ifndef __MPFR_H
@@ -49,7 +49,11 @@ http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
 #define MPFR_VERSION \
 MPFR_VERSION_NUM(MPFR_VERSION_MAJOR,MPFR_VERSION_MINOR,MPFR_VERSION_PATCHLEVEL)
 
+#ifndef MPFR_USE_MINI_GMP
 #include <gmp.h>
+#else
+#include <mini-gmp.h>
+#endif
 
 /* Avoid some problems with macro expansion if the user defines macros
    with the same name as keywords. By convention, identifiers and macro
@@ -273,7 +277,7 @@ typedef enum {
 #endif
 
 /* If the user hasn't requested his/her preference
-   and if the intension of support by the compiler is C99
+   and if the intention of support by the compiler is C99
    and if the compiler is known to support the C99 feature
    then we can auto-detect the C99 support as OK.
    __GNUC__ is used to detect GNU-C, ICC & CLANG compilers.
@@ -339,6 +343,13 @@ typedef enum {
    not __llvm__, and __declspec(deprecated("...")) can be used with
    MSC as above. */
 
+#if defined(__GNUC__) && \
+  (__GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9))
+# define MPFR_RETURNS_NONNULL __attribute__ ((returns_nonnull))
+#else
+# define MPFR_RETURNS_NONNULL
+#endif
+
 /* Note: In order to be declared, some functions need a specific
    system header to be included *before* "mpfr.h". If the user
    forgets to include the header, the MPFR function prototype in
@@ -351,14 +362,16 @@ typedef enum {
 extern "C" {
 #endif
 
-__MPFR_DECLSPEC const char * mpfr_get_version (void);
-__MPFR_DECLSPEC const char * mpfr_get_patches (void);
+__MPFR_DECLSPEC MPFR_RETURNS_NONNULL const char * mpfr_get_version (void);
+__MPFR_DECLSPEC MPFR_RETURNS_NONNULL const char * mpfr_get_patches (void);
+
 __MPFR_DECLSPEC int mpfr_buildopt_tls_p          (void);
 __MPFR_DECLSPEC int mpfr_buildopt_float128_p     (void);
 __MPFR_DECLSPEC int mpfr_buildopt_decimal_p      (void);
 __MPFR_DECLSPEC int mpfr_buildopt_gmpinternals_p (void);
 __MPFR_DECLSPEC int mpfr_buildopt_sharedcache_p  (void);
-__MPFR_DECLSPEC const char * mpfr_buildopt_tune_case (void);
+__MPFR_DECLSPEC MPFR_RETURNS_NONNULL const char *
+  mpfr_buildopt_tune_case (void);
 
 __MPFR_DECLSPEC mpfr_exp_t mpfr_get_emin     (void);
 __MPFR_DECLSPEC int        mpfr_set_emin     (mpfr_exp_t);
@@ -486,6 +499,7 @@ __MPFR_DECLSPEC float mpfr_get_flt (mpfr_srcptr, mpfr_rnd_t);
 __MPFR_DECLSPEC double mpfr_get_d (mpfr_srcptr, mpfr_rnd_t);
 #ifdef MPFR_WANT_DECIMAL_FLOATS
 __MPFR_DECLSPEC _Decimal64 mpfr_get_decimal64 (mpfr_srcptr, mpfr_rnd_t);
+__MPFR_DECLSPEC _Decimal128 mpfr_get_decimal128 (mpfr_srcptr, mpfr_rnd_t);
 #endif
 __MPFR_DECLSPEC long double mpfr_get_ld (mpfr_srcptr, mpfr_rnd_t);
 __MPFR_DECLSPEC double mpfr_get_d1 (mpfr_srcptr);
@@ -758,12 +772,14 @@ __MPFR_DECLSPEC int mpfr_round_nearest_away_end (mpfr_t, int);
 
 __MPFR_DECLSPEC size_t mpfr_custom_get_size (mpfr_prec_t);
 __MPFR_DECLSPEC void mpfr_custom_init (void *, mpfr_prec_t);
-__MPFR_DECLSPEC void * mpfr_custom_get_significand (mpfr_srcptr);
+__MPFR_DECLSPEC MPFR_RETURNS_NONNULL void *
+  mpfr_custom_get_significand (mpfr_srcptr);
 __MPFR_DECLSPEC mpfr_exp_t mpfr_custom_get_exp (mpfr_srcptr);
 __MPFR_DECLSPEC void mpfr_custom_move (mpfr_ptr, void *);
 __MPFR_DECLSPEC void mpfr_custom_init_set (mpfr_ptr, int, mpfr_exp_t,
                                            mpfr_prec_t, void *);
 __MPFR_DECLSPEC int mpfr_custom_get_kind (mpfr_srcptr);
+
 __MPFR_DECLSPEC int mpfr_total_order (mpfr_srcptr, mpfr_srcptr);
 
 #if defined (__cplusplus)
@@ -803,7 +819,7 @@ __MPFR_DECLSPEC int mpfr_total_order (mpfr_srcptr, mpfr_srcptr);
    even if it produces faster and smaller code. */
 #ifndef MPFR_USE_NO_MACRO
 
-/* Inlining theses functions is both faster and smaller */
+/* Inlining these functions is both faster and smaller */
 #define mpfr_nan_p(_x)      ((_x)->_mpfr_exp == __MPFR_EXP_NAN)
 #define mpfr_inf_p(_x)      ((_x)->_mpfr_exp == __MPFR_EXP_INF)
 #define mpfr_zero_p(_x)     ((_x)->_mpfr_exp == __MPFR_EXP_ZERO)
@@ -970,7 +986,7 @@ __MPFR_DECLSPEC int mpfr_total_order (mpfr_srcptr, mpfr_srcptr);
 
 #endif /* MPFR_USE_NO_MACRO */
 
-/* Theses are defined to be macros */
+/* These are defined to be macros */
 #define mpfr_init_set_si(x, i, rnd) \
  ( mpfr_init(x), mpfr_set_si((x), (i), (rnd)) )
 #define mpfr_init_set_ui(x, i, rnd) \
