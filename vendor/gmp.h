@@ -135,18 +135,18 @@ along with the GNU MP Library.  If not, see http://www.gnu.org/licenses/.  */
 #if defined (__GNUC__)
 #define __GMP_DECLSPEC_EXPORT  __declspec(__dllexport__)
 #define __GMP_DECLSPEC_IMPORT  __declspec(__dllimport__)
-#endif
-#if defined (_MSC_VER) || defined (__BORLANDC__)
+#elif defined (_MSC_VER) || defined (__BORLANDC__) || defined (__ORANGEC__)
 #define __GMP_DECLSPEC_EXPORT  __declspec(dllexport)
 #define __GMP_DECLSPEC_IMPORT  __declspec(dllimport)
-#endif
-#ifdef __WATCOMC__
+#elif defined (__WATCOMC__)
 #define __GMP_DECLSPEC_EXPORT  __export
 #define __GMP_DECLSPEC_IMPORT  __import
-#endif
-#ifdef __IBMC__
+#elif defined (__IBMC__)
 #define __GMP_DECLSPEC_EXPORT  _Export
 #define __GMP_DECLSPEC_IMPORT  _Import
+#else
+#define __GMP_DECLSPEC_EXPORT
+#define __GMP_DECLSPEC_IMPORT
 #endif
 #if defined( _MSC_VER )
 #  if defined( MSC_BUILD_DLL )
@@ -265,6 +265,8 @@ typedef __gmp_const __mpf_struct *mpf_srcptr;
 typedef __mpf_struct *mpf_ptr;
 typedef __gmp_const __mpq_struct *mpq_srcptr;
 typedef __mpq_struct *mpq_ptr;
+typedef __gmp_const __gmp_randstate_struct *randstate_srcptr;
+typedef __gmp_randstate_struct *randstate_ptr;
 #if __GMP_LIBGMP_DLL
 #if __GMP_WITHIN_GMPXX
 /* compiling to go into a DLL libmpirxx */
